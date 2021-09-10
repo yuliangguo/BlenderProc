@@ -5,7 +5,7 @@ import glob
 import numpy as np
 import png
 import shutil
-import h5py
+
 import bpy
 from mathutils import Euler, Matrix, Vector
 
@@ -13,7 +13,6 @@ from src.utility.BlenderUtility import get_all_blender_mesh_objects, load_image
 from src.utility.Utility import Utility
 from src.writer.WriterInterface import WriterInterface
 from src.writer.CameraStateWriter import CameraStateWriter
-
 
 def load_json(path, keys_to_int=False):
     """Loads content of a JSON file.
@@ -87,24 +86,6 @@ def save_depth(path, im):
         w_depth.write(f, np.reshape(im_uint16, (-1, im.shape[1])))
 
 
-def save_normals(path, im):
-    """Saves a depth image (16-bit) to a PNG file.
-    From the BOP toolkit (https://github.com/thodan/bop_toolkit).
-
-    :param path: Path to the output depth image file.
-    :param im: ndarray with the depth image to save.
-    """
-    if not path.endswith(".png"):
-        raise ValueError('Only PNG format is currently supported.')
-    im *= 65535
-    im[im > 65535] = 65535
-    im_uint16 = np.round(im).astype(np.uint16)
-
-    w_normal = png.Writer(im.shape[1], im.shape[0], greyscale=False, bitdepth=16)
-    with open(path, 'wb') as f:
-        w_normal.write(f, np.reshape(im_uint16, (-1, im.shape[1]*im.shape[2])))
-
-
 class BopWriter(WriterInterface):
     """ Saves the synthesized dataset in the BOP format. The dataset is split
         into chunks which are saved as individual "scenes". For more details
@@ -172,7 +153,6 @@ class BopWriter(WriterInterface):
 
         # Format of the depth images.
         depth_ext = '.png'
-        normal_ext = '.png'
 
         # Output paths.
         base_path = self._determine_output_dir(False)
@@ -183,8 +163,6 @@ class BopWriter(WriterInterface):
             self.chunks_dir, '{chunk_id:06d}', 'rgb', '{im_id:06d}' + '{im_type}')
         self.depth_tpath = os.path.join(
             self.chunks_dir, '{chunk_id:06d}', 'depth', '{im_id:06d}' + depth_ext)
-        self.normal_tpath = os.path.join(
-            self.chunks_dir, '{chunk_id:06d}', 'normal', '{im_id:06d}' + normal_ext)
         self.chunk_camera_tpath = os.path.join(
             self.chunks_dir, '{chunk_id:06d}', 'scene_camera.json')
         self.chunk_gt_tpath = os.path.join(
@@ -354,8 +332,7 @@ class BopWriter(WriterInterface):
                     self.rgb_tpath.format(chunk_id=curr_chunk_id, im_id=0, im_type='PNG')))
                 os.makedirs(os.path.dirname(
                     self.depth_tpath.format(chunk_id=curr_chunk_id, im_id=0)))
-                os.makedirs(os.path.dirname(
-                    self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=0)))
+
             # Get GT annotations and camera info for the current frame.
             chunk_gt[curr_frame_id] = self._get_frame_gt()
             chunk_camera[curr_frame_id] = self._get_frame_camera()
@@ -383,20 +360,6 @@ class BopWriter(WriterInterface):
             depth_fpath = self.depth_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
             save_depth(depth_fpath, depth_mm_scaled)
 
-            # output normal maps
-            normal_output = Utility.find_registered_output_by_key("normals")
-            if normal_output is None:
-                raise Exception("Normal image has not been rendered.")
-            normals, _, _ = self._load_and_postprocess(normal_output['path'] % frame_id, "normals")  # in [0, 1]
-            normal_fpath = self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
-            save_normals(normal_fpath, normals)
-
-            # # Create output hdf5 file
-            # hdf5_path = self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
-            # with h5py.File(hdf5_path, "w") as f:
-            #     # self._write_to_hdf_file(f, 'depth', depth)
-            #     self._write_to_hdf_file(f, 'normals', normals)
-
             # Save the chunk info if we are at the end of a chunk or at the last new frame.
             if ((curr_frame_id + 1) % self.frames_per_chunk == 0) or\
                   (frame_id == num_new_frames - 1):
@@ -412,15 +375,3 @@ class BopWriter(WriterInterface):
                 curr_frame_id = 0
             else:
                 curr_frame_id += 1
-
-    def _write_to_hdf_file(self, file, key, data):
-        """ Adds the given data as a new entry to the given hdf5 file.
-
-        :param file: The hdf5 file handle.
-        :param key: The key at which the data should be stored in the hdf5 file. Type: string.
-        :param data: The data to store.
-        """
-        if data.dtype.char == 'S':
-            file.create_dataset(key, data=data, dtype=data.dtype)
-        else:
-            file.create_dataset(key, data=data, compression=self.config.get_string("compression", 'gzip'))
