@@ -100,6 +100,7 @@ def save_normals(path, im):
     im[im > 65535] = 65535
     im_uint16 = np.round(im).astype(np.uint16)
 
+    # PyPNG library can save 16-bit PNG and is faster than imageio.imwrite().
     w_normal = png.Writer(im.shape[1], im.shape[0], greyscale=False, bitdepth=16)
     with open(path, 'wb') as f:
         w_normal.write(f, np.reshape(im_uint16, (-1, im.shape[1]*im.shape[2])))
@@ -176,7 +177,8 @@ class BopWriter(WriterInterface):
 
         # Output paths.
         base_path = self._determine_output_dir(False)
-        self.dataset_dir = os.path.join(base_path, 'bop_data', self.dataset)
+        # self.dataset_dir = os.path.join(base_path, 'bop_data', self.dataset)
+        self.dataset_dir = os.path.join(base_path, self.dataset)
         self.chunks_dir = os.path.join(self.dataset_dir, 'train_pbr')
         self.camera_path = os.path.join(self.dataset_dir, 'camera.json')
         self.rgb_tpath = os.path.join(

@@ -2,13 +2,13 @@
 {
   "version": 3,
   "setup": {
-    "blender_install_path": "/home_local/<env:USER>/blender/",
+    "blender_install_path": "/home/yuliang/blender-2.93.4-linux-x64/",
     "pip": [
       "h5py",
       "scikit-image",
       "pypng==0.0.20",
-      "scipy==1.2.2",
-      "matplotlib==2.2.4"
+      "scipy==1.6.2",
+      "matplotlib==3.3.2"
     ]
   },
   "modules": [
@@ -28,8 +28,9 @@
         "bop_dataset_path": "<args:0>/<args:1>",
         "mm2m": True,
         "split": "test", # careful, some BOP datasets only have test sets
-        "scene_id": 1,
-        "model_type": ""
+#        "scene_id": 1,
+        "scene_id": <args:4>,
+        "model_type": "cad"
       }
     },
     {
@@ -55,7 +56,8 @@
       "module": "renderer.RgbRenderer",
       "config": {
         "samples": 50,
-        "render_distance": True
+        "render_distance": True,
+        "render_normals": True
       }
     },
     {
@@ -76,8 +78,8 @@
         }
       }
     },
-    {
-      "module": "writer.Hdf5Writer"
-    }
+#    {
+#      "module": "writer.Hdf5Writer"
+#    }
   ]
 }
