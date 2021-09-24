@@ -27,9 +27,8 @@
         "source_frame": ["X", "-Y", "-Z"],
         "bop_dataset_path": "<args:0>/<args:1>",
         "mm2m": True,
-        "split": "test", # careful, some BOP datasets only have test sets
-        "split_type": "primesense", # can be ""
-#        "scene_id": 1,
+        "split": "test", # "train", "test"
+        "split_type": "primesense", # can be "", "primesense", "pbr", etc.
         "scene_id": <args:4>,
         "model_type": "cad"
       }
@@ -72,8 +71,8 @@
       "config": {
         "dataset": "<args:1>",
         "save_world2cam": False, # world coords are arbitrary in most real BOP datasets
-        "split": "test", # careful, some BOP datasets only have test sets
-        "split_type": "primesense", # default is ""
+        "split": "test", # "train", "test"
+        "split_type": "primesense", # can be "", "primesense", "pbr", etc.
         "scene_id": <args:4>,
         "append_to_existing_output": True,
         "postprocessing_modules": {

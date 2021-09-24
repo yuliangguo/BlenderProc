@@ -314,39 +314,39 @@ class BopWriterNormalOnly(WriterInterface):
     def _write_frames(self):
         """ Writes images, GT annotations and camera info.
         """
-        # Paths to the already existing chunk folders (such folders may exist
-        # when appending to an existing dataset).
-        chunk_dirs = sorted(glob.glob(os.path.join(self.chunks_dir, '*')))
-        chunk_dirs = [d for d in chunk_dirs if os.path.isdir(d)]
-
-        # Get ID's of the last already existing chunk and frame.
-        curr_chunk_id = 0
+        # # Paths to the already existing chunk folders (such folders may exist
+        # # when appending to an existing dataset).
+        # chunk_dirs = sorted(glob.glob(os.path.join(self.chunks_dir, '*')))
+        # chunk_dirs = [d for d in chunk_dirs if os.path.isdir(d)]
+        #
+        # # Get ID's of the last already existing chunk and frame.
+        # curr_chunk_id = 0
         curr_frame_id = 0
-        if len(chunk_dirs):
-            last_chunk_dir = sorted(chunk_dirs)[-1]
-            last_chunk_gt_fpath = os.path.join(last_chunk_dir, 'scene_gt.json')
-            chunk_gt = load_json(last_chunk_gt_fpath, keys_to_int=True)
-
-            # Last chunk and frame ID's.
-            last_chunk_id = int(os.path.basename(last_chunk_dir))
-            last_frame_id = int(sorted(chunk_gt.keys())[-1])
-
-            # Current chunk and frame ID's.
-            curr_chunk_id = last_chunk_id
-            curr_frame_id = last_frame_id + 1
-            if curr_frame_id % self.frames_per_chunk == 0:
-                curr_chunk_id += 1
-                curr_frame_id = 0
-
-        # Initialize structures for the GT annotations and camera info.
-        chunk_gt = {}
-        chunk_camera = {}
-        if curr_frame_id != 0:
-            # Load GT and camera info of the chunk we are appending to.
-            chunk_gt = load_json(
-                self.chunk_gt_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
-            chunk_camera = load_json(
-                self.chunk_camera_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
+        # if len(chunk_dirs):
+        #     last_chunk_dir = sorted(chunk_dirs)[-1]
+        #     last_chunk_gt_fpath = os.path.join(last_chunk_dir, 'scene_gt.json')
+        #     chunk_gt = load_json(last_chunk_gt_fpath, keys_to_int=True)
+        #
+        #     # Last chunk and frame ID's.
+        #     last_chunk_id = int(os.path.basename(last_chunk_dir))
+        #     last_frame_id = int(sorted(chunk_gt.keys())[-1])
+        #
+        #     # Current chunk and frame ID's.
+        #     curr_chunk_id = last_chunk_id
+        #     curr_frame_id = last_frame_id + 1
+        #     if curr_frame_id % self.frames_per_chunk == 0:
+        #         curr_chunk_id += 1
+        #         curr_frame_id = 0
+        #
+        # # Initialize structures for the GT annotations and camera info.
+        # chunk_gt = {}
+        # chunk_camera = {}
+        # if curr_frame_id != 0:
+        #     # Load GT and camera info of the chunk we are appending to.
+        #     chunk_gt = load_json(
+        #         self.chunk_gt_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
+        #     chunk_camera = load_json(
+        #         self.chunk_camera_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
 
         # Go through all frames.
         num_new_frames = bpy.context.scene.frame_end - bpy.context.scene.frame_start
@@ -416,7 +416,7 @@ class BopWriterNormalOnly(WriterInterface):
                 # save_json(self.chunk_camera_tpath.format(chunk_id=self._scene_id), chunk_camera)
 
                 # Update ID's.
-                curr_chunk_id += 1
+                # curr_chunk_id += 1
                 curr_frame_id = 0
             else:
                 curr_frame_id += 1
