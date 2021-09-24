@@ -106,7 +106,7 @@ def save_normals(path, im):
         w_normal.write(f, np.reshape(im_uint16, (-1, im.shape[1]*im.shape[2])))
 
 
-class BopWriter(WriterInterface):
+class BopWriterNormalOnly(WriterInterface):
     """ Saves the synthesized dataset in the BOP format. The dataset is split
         into chunks which are saved as individual "scenes". For more details
         about the BOP format, visit the BOP toolkit docs:
@@ -171,6 +171,10 @@ class BopWriter(WriterInterface):
         # Output translation gt in mm
         self._scale = 1000. if self.config.get_bool("m2mm", True) else 1.
 
+        self._split = self.config.get_string("split", "test")
+        self._split_type = self.config.get_string("split_type", "")
+        self._scene_id = self.config.get_int("scene_id", -1)
+
         # Format of the depth images.
         depth_ext = '.png'
         normal_ext = '.png'
@@ -179,7 +183,9 @@ class BopWriter(WriterInterface):
         base_path = self._determine_output_dir(False)
         # self.dataset_dir = os.path.join(base_path, 'bop_data', self.dataset)
         self.dataset_dir = os.path.join(base_path, self.dataset)
-        self.chunks_dir = os.path.join(self.dataset_dir, 'train_pbr')  # TODO: hard-coded output folder
+        self.chunks_dir = os.path.join(self.dataset_dir, self._split)
+        if len(self._split_type) > 0:
+            self.chunks_dir += '_' + self._split_type
         self.camera_path = os.path.join(self.dataset_dir, 'camera.json')
         self.rgb_tpath = os.path.join(
             self.chunks_dir, '{chunk_id:06d}', 'rgb', '{im_id:06d}' + '{im_type}')
@@ -228,7 +234,7 @@ class BopWriter(WriterInterface):
         self.cam_pose = (self.cam, cam_ob)
 
         # Save the data.
-        self._write_camera()
+        # self._write_camera()
         self._write_frames()
 
     def _write_camera(self):
@@ -338,9 +344,9 @@ class BopWriter(WriterInterface):
         if curr_frame_id != 0:
             # Load GT and camera info of the chunk we are appending to.
             chunk_gt = load_json(
-                self.chunk_gt_tpath.format(chunk_id=curr_chunk_id), keys_to_int=True)
+                self.chunk_gt_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
             chunk_camera = load_json(
-                self.chunk_camera_tpath.format(chunk_id=curr_chunk_id), keys_to_int=True)
+                self.chunk_camera_tpath.format(chunk_id=self._scene_id), keys_to_int=True)
 
         # Go through all frames.
         num_new_frames = bpy.context.scene.frame_end - bpy.context.scene.frame_start
@@ -352,49 +358,49 @@ class BopWriter(WriterInterface):
             if curr_frame_id == 0:
                 chunk_gt = {}
                 chunk_camera = {}
+                # os.makedirs(os.path.dirname(
+                #     self.rgb_tpath.format(chunk_id=self._scene_id, im_id=0, im_type='PNG')))
+                # os.makedirs(os.path.dirname(
+                #     self.depth_tpath.format(chunk_id=self._scene_id, im_id=0)))
                 os.makedirs(os.path.dirname(
-                    self.rgb_tpath.format(chunk_id=curr_chunk_id, im_id=0, im_type='PNG')))
-                os.makedirs(os.path.dirname(
-                    self.depth_tpath.format(chunk_id=curr_chunk_id, im_id=0)))
-                os.makedirs(os.path.dirname(
-                    self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=0)))
+                    self.normal_tpath.format(chunk_id=self._scene_id, im_id=0)))
             # Get GT annotations and camera info for the current frame.
             chunk_gt[curr_frame_id] = self._get_frame_gt()
             chunk_camera[curr_frame_id] = self._get_frame_camera()
 
-            # Copy the resulting RGB image.
-            rgb_output = Utility.find_registered_output_by_key("colors")
-            if rgb_output is None:
-                raise Exception("RGB image has not been rendered.")
-            image_type = '.png' if rgb_output['path'].endswith('png') else '.jpg'
-            rgb_fpath = self.rgb_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id, im_type=image_type)
-            shutil.copyfile(rgb_output['path'] % frame_id, rgb_fpath)
+            # # Copy the resulting RGB image.
+            # rgb_output = Utility.find_registered_output_by_key("colors")
+            # if rgb_output is None:
+            #     raise Exception("RGB image has not been rendered.")
+            # image_type = '.png' if rgb_output['path'].endswith('png') else '.jpg'
+            # rgb_fpath = self.rgb_tpath.format(chunk_id=self._scene_id, im_id=curr_frame_id, im_type=image_type)
+            # shutil.copyfile(rgb_output['path'] % frame_id, rgb_fpath)
 
-            # Load the resulting dist image.
-            dist_output = Utility.find_registered_output_by_key("distance")
-            if dist_output is None:
-                raise Exception("Distance image has not been rendered.")
-            depth, _, _ = self._load_and_postprocess(dist_output['path'] % frame_id, "distance")
-
-            # Scale the depth to retain a higher precision (the depth is saved
-            # as a 16-bit PNG image with range 0-65535).
-            depth_mm = 1000.0 * depth  # [m] -> [mm]
-            depth_mm_scaled = depth_mm / float(self.depth_scale)
-
-            # Save the scaled depth image.
-            depth_fpath = self.depth_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
-            save_depth(depth_fpath, depth_mm_scaled)
+            # # Load the resulting dist image.
+            # dist_output = Utility.find_registered_output_by_key("distance")
+            # if dist_output is None:
+            #     raise Exception("Distance image has not been rendered.")
+            # depth, _, _ = self._load_and_postprocess(dist_output['path'] % frame_id, "distance")
+            #
+            # # Scale the depth to retain a higher precision (the depth is saved
+            # # as a 16-bit PNG image with range 0-65535).
+            # depth_mm = 1000.0 * depth  # [m] -> [mm]
+            # depth_mm_scaled = depth_mm / float(self.depth_scale)
+            #
+            # # Save the scaled depth image.
+            # depth_fpath = self.depth_tpath.format(chunk_id=self._scene_id, im_id=curr_frame_id)
+            # save_depth(depth_fpath, depth_mm_scaled)
 
             # output normal maps
             normal_output = Utility.find_registered_output_by_key("normals")
             if normal_output is None:
                 raise Exception("Normal image has not been rendered.")
             normals, _, _ = self._load_and_postprocess(normal_output['path'] % frame_id, "normals")  # in [0, 1]
-            normal_fpath = self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
+            normal_fpath = self.normal_tpath.format(chunk_id=self._scene_id, im_id=curr_frame_id)
             save_normals(normal_fpath, normals)
 
             # # Create output hdf5 file
-            # hdf5_path = self.normal_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
+            # hdf5_path = self.normal_tpath.format(chunk_id=self._scene_id, im_id=curr_frame_id)
             # with h5py.File(hdf5_path, "w") as f:
             #     # self._write_to_hdf_file(f, 'depth', depth)
             #     self._write_to_hdf_file(f, 'normals', normals)
@@ -403,11 +409,11 @@ class BopWriter(WriterInterface):
             if ((curr_frame_id + 1) % self.frames_per_chunk == 0) or\
                   (frame_id == num_new_frames - 1):
 
-                # Save GT annotations.
-                save_json(self.chunk_gt_tpath.format(chunk_id=curr_chunk_id), chunk_gt)
-
-                # Save camera info.
-                save_json(self.chunk_camera_tpath.format(chunk_id=curr_chunk_id), chunk_camera)
+                # # Save GT annotations.
+                # save_json(self.chunk_gt_tpath.format(chunk_id=self._scene_id), chunk_gt)
+                #
+                # # Save camera info.
+                # save_json(self.chunk_camera_tpath.format(chunk_id=self._scene_id), chunk_camera)
 
                 # Update ID's.
                 curr_chunk_id += 1

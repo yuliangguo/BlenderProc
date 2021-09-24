@@ -15,7 +15,7 @@ from src.utility.Utility import Utility
 class BopLoader:
 
     @staticmethod
-    def load(bop_dataset_path: str, temp_dir: str, sys_paths: list, model_type: str = "", cam_type: str = "", split: str = "test", scene_id: int = -1, obj_ids: list = [], sample_objects: bool = False, num_of_objs_to_sample: int = None, obj_instances_limit: int = -1, move_origin_to_x_y_plane: bool = False, source_frame: list = ["X", "-Y", "-Z"], mm2m: bool = False) -> List[MeshObject]:
+    def load(bop_dataset_path: str, temp_dir: str, sys_paths: list, model_type: str = "", cam_type: str = "", split: str = "test", split_type: str = "", scene_id: int = -1, obj_ids: list = [], sample_objects: bool = False, num_of_objs_to_sample: int = None, obj_instances_limit: int = -1, move_origin_to_x_y_plane: bool = False, source_frame: list = ["X", "-Y", "-Z"], mm2m: bool = False) -> List[MeshObject]:
         """ Loads the 3D models of any BOP dataset and allows replicating BOP scenes
 
         - Interfaces with the bob_toolkit, allows loading of train, val and test splits
@@ -28,6 +28,7 @@ class BopLoader:
         :param model_type: Optionally, specify type of BOP model.  Available: [reconst, cad or eval].
         :param cam_type: Camera type. If not defined, dataset-specific default camera type is used.
         :param split: Optionally, test or val split depending on BOP dataset.
+        :param split_type: Optionally, default is "", only some dataset and split has pbr, .etc.
         :param scene_id: Optionally, specify BOP dataset scene to synthetically replicate. Default: -1 (no scene is replicated,
                          only BOP Objects are loaded).
         :param obj_ids: List of object ids to load. Default: [] (all objects from the given BOP dataset if scene_id is not
@@ -75,7 +76,9 @@ class BopLoader:
         cam_p = dataset_params.get_camera_params(datasets_path, dataset, cam_type=cam_type if cam_type else None)
 
         try:
-            split_p = dataset_params.get_split_params(datasets_path, dataset, split=split)
+            if len(split_type)==0:
+                split_type=None
+            split_p = dataset_params.get_split_params(datasets_path, dataset, split=split, split_type=split_type)
         except ValueError:
             raise Exception("Wrong path or {} split does not exist in {}.".format(split, dataset))
         

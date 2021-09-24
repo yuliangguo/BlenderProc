@@ -97,6 +97,7 @@ class BopLoaderModule(LoaderInterface):
             model_type=self.config.get_string("model_type", ""),
             cam_type=self.config.get_string("cam_type", ""),
             split=self.config.get_string("split", "test"),
+            split_type=self.config.get_string("split_type", ""),
             scene_id=self.config.get_int("scene_id", -1),
             obj_ids=self.config.get_list("obj_ids", []),
             sample_objects=sample_objects,
