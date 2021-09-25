@@ -2,13 +2,14 @@
 {
   "version": 3,
   "setup": {
-    "blender_install_path": "/home/yuliang/blender-2.93.4-linux-x64/",
+    "blender_install_path": "/home/hmiintern/blender-2.93.4-linux-x64/",
     "pip": [
       "h5py",
       "scikit-image",
       "pypng==0.0.20",
       "scipy==1.6.2",
-      "matplotlib==3.3.2"
+      "matplotlib==3.3.2",
+      "pytz"
     ]
   },
   "modules": [
@@ -27,9 +28,9 @@
         "source_frame": ["X", "-Y", "-Z"],
         "bop_dataset_path": "<args:0>/<args:1>",
         "mm2m": True,
-        "split": "test", # "train", "test"
-        "split_type": "primesense", # can be "", "primesense", "pbr", etc.
-        "scene_id": <args:4>,
+        "split": "<args:4>", # "train", "test"
+        "split_type": "<args:5>", # can be "", "primesense", "pbr", etc.
+        "scene_id": <args:6>,
         "model_type": "cad"
       }
     },
@@ -71,9 +72,9 @@
       "config": {
         "dataset": "<args:1>",
         "save_world2cam": False, # world coords are arbitrary in most real BOP datasets
-        "split": "test", # "train", "test"
-        "split_type": "primesense", # can be "", "primesense", "pbr", etc.
-        "scene_id": <args:4>,
+        "split": "<args:4>", # "train", "test"
+        "split_type": "<args:5>", # can be "", "primesense", "pbr", etc.
+        "scene_id": <args:6>,
         "append_to_existing_output": True,
         "postprocessing_modules": {
         }
